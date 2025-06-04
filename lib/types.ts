@@ -8,9 +8,6 @@ export interface User {
   streak: number
   badges: string[]
   createdAt: Date
-  bio?: string
-  profileImage?: string // base64 image
-  lastActive?: Date
 }
 
 export interface Quiz {
@@ -54,24 +51,4 @@ export interface LeaderboardEntry {
   score: number
   timeSpent: number
   completedAt: Date
-}
-
-export interface ActivityLog {
-  id: string
-  userId: string
-  userName: string
-  userEmail: string
-  action: string
-  details: string
-  timestamp: Date
-  ipAddress?: string
-}
-
-export interface VerificationCode {
-  id: string
-  email: string
-  code: string
-  expiresAt: Date
-  used: boolean
-  createdAt: Date
 }

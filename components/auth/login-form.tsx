@@ -13,49 +13,14 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { Chrome, Mail, Lock, Shield } from "lucide-react"
+import { Chrome, Mail, Lock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { sendVerificationCode, verifyCode } from "@/lib/email-verification"
-import { logActivity } from "@/lib/activity-logger"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [verificationCodeInput, setVerificationCodeInput] = useState("")
-  const [showVerification, setShowVerification] = useState(false)
-  const [sentCode, setSentCode] = useState("")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-
-  const handleSendCode = async () => {
-    if (!email) {
-      toast({
-        title: "Error",
-        description: "Please enter your email address",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const code = await sendVerificationCode(email)
-      setSentCode(code)
-      setShowVerification(true)
-      toast({
-        title: "Verification Code Sent",
-        description: `Code sent to ${email}. Check your console for demo purposes: ${code}`,
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send verification code",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleEmailLogin = async (isSignUp: boolean) => {
     if (!email || !password) {
@@ -67,52 +32,22 @@ export function LoginForm() {
       return
     }
 
-    if (!showVerification) {
-      await handleSendCode()
-      return
-    }
-
-    // Verify the code first
-    const isValidCode = await verifyCode(email, verificationCodeInput)
-    if (!isValidCode) {
-      toast({
-        title: "Error",
-        description: "Invalid or expired verification code",
-        variant: "destructive",
-      })
-      return
-    }
-
     setLoading(true)
     try {
-      let userCredential
       if (isSignUp) {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        await logActivity(
-          userCredential.user.uid,
-          userCredential.user.displayName || "Anonymous",
-          userCredential.user.email || "",
-          "Account Created",
-          "User created a new account with email verification",
-        )
+        await createUserWithEmailAndPassword(auth, email, password)
         toast({
           title: "Success!",
           description: "Account created successfully! Welcome to QuizForge!",
         })
       } else {
-        userCredential = await signInWithEmailAndPassword(auth, email, password)
-        await logActivity(
-          userCredential.user.uid,
-          userCredential.user.displayName || "Anonymous",
-          userCredential.user.email || "",
-          "User Login",
-          "User logged in with email verification",
-        )
+        await signInWithEmailAndPassword(auth, email, password)
         toast({
           title: "Welcome back!",
           description: "Successfully signed in",
         })
       }
+      // No need to redirect - the auth state change will handle it automatically
     } catch (error: any) {
       toast({
         title: "Error",
@@ -128,20 +63,12 @@ export function LoginForm() {
     setLoading(true)
     try {
       const provider = new GoogleAuthProvider()
-      const userCredential = await signInWithPopup(auth, provider)
-
-      await logActivity(
-        userCredential.user.uid,
-        userCredential.user.displayName || "Anonymous",
-        userCredential.user.email || "",
-        "Google Login",
-        "User logged in with Google authentication",
-      )
-
+      await signInWithPopup(auth, provider)
       toast({
         title: "Welcome!",
         description: "Successfully signed in with Google",
       })
+      // No need to redirect - the auth state change will handle it automatically
     } catch (error: any) {
       toast({
         title: "Error",
@@ -195,32 +122,9 @@ export function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
-                    disabled={showVerification}
                   />
                 </div>
               </div>
-
-              {showVerification && (
-                <div className="space-y-2">
-                  <Label htmlFor="verification">Verification Code</Label>
-                  <div className="relative">
-                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="verification"
-                      type="text"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCodeInput}
-                      onChange={(e) => setVerificationCodeInput(e.target.value)}
-                      className="pl-10"
-                      maxLength={6}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Demo code: {sentCode} (In production, this would be sent via email)
-                  </p>
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -235,9 +139,8 @@ export function LoginForm() {
                   />
                 </div>
               </div>
-
               <Button onClick={() => handleEmailLogin(false)} disabled={loading} className="w-full">
-                {showVerification ? "Verify & Sign In" : "Send Code & Sign In"}
+                Sign In
               </Button>
             </TabsContent>
 
@@ -253,32 +156,9 @@ export function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
-                    disabled={showVerification}
                   />
                 </div>
               </div>
-
-              {showVerification && (
-                <div className="space-y-2">
-                  <Label htmlFor="signup-verification">Verification Code</Label>
-                  <div className="relative">
-                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-verification"
-                      type="text"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCodeInput}
-                      onChange={(e) => setVerificationCodeInput(e.target.value)}
-                      className="pl-10"
-                      maxLength={6}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Demo code: {sentCode} (In production, this would be sent via email)
-                  </p>
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>
                 <div className="relative">
@@ -293,9 +173,8 @@ export function LoginForm() {
                   />
                 </div>
               </div>
-
               <Button onClick={() => handleEmailLogin(true)} disabled={loading} className="w-full">
-                {showVerification ? "Verify & Create Account" : "Send Code & Sign Up"}
+                Create Account
               </Button>
             </TabsContent>
           </Tabs>
