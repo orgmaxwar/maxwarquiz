@@ -38,7 +38,7 @@ export function LoginForm() {
         await createUserWithEmailAndPassword(auth, email, password)
         toast({
           title: "Success!",
-          description: "Account created successfully",
+          description: "Account created successfully! Welcome to QuizForge!",
         })
       } else {
         await signInWithEmailAndPassword(auth, email, password)
@@ -47,6 +47,7 @@ export function LoginForm() {
           description: "Successfully signed in",
         })
       }
+      // No need to redirect - the auth state change will handle it automatically
     } catch (error: any) {
       toast({
         title: "Error",
@@ -67,6 +68,7 @@ export function LoginForm() {
         title: "Welcome!",
         description: "Successfully signed in with Google",
       })
+      // No need to redirect - the auth state change will handle it automatically
     } catch (error: any) {
       toast({
         title: "Error",

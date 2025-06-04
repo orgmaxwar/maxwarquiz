@@ -28,14 +28,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (firebaseUser) {
         setFirebaseUser(firebaseUser)
 
-        // Get or create user document
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
+        try {
+          // Get or create user document
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
 
-        if (userDoc.exists()) {
-          setUser({ id: firebaseUser.uid, ...userDoc.data() } as User)
-        } else {
-          // Create new user document
-          const newUser: User = {
+          if (userDoc.exists()) {
+            setUser({ id: firebaseUser.uid, ...userDoc.data() } as User)
+          } else {
+            // Create new user document
+            const newUser: User = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              displayName: firebaseUser.displayName || "Anonymous",
+              photoURL: firebaseUser.photoURL || undefined,
+              xp: 0,
+              level: 1,
+              streak: 0,
+              badges: [],
+              createdAt: new Date(),
+            }
+
+            await setDoc(doc(db, "users", firebaseUser.uid), newUser)
+            setUser(newUser)
+          }
+        } catch (error) {
+          console.error("Error setting up user:", error)
+          // Set basic user data even if Firestore fails
+          setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email || "",
             displayName: firebaseUser.displayName || "Anonymous",
@@ -45,10 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             streak: 0,
             badges: [],
             createdAt: new Date(),
-          }
-
-          await setDoc(doc(db, "users", firebaseUser.uid), newUser)
-          setUser(newUser)
+          })
         }
       } else {
         setUser(null)
